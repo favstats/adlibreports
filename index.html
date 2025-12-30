@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Global Political Ad Intelligence | Academic Transparency Dashboard</title>
+  <meta
+    name="description"
+    content="Academic transparency dashboard for global political advertising spend and trends, using Highcharts maps and time-series analytics."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --ink-900: #0f172a;
+      --ink-700: #334155;
+      --ink-500: #64748b;
+      --ink-300: #cbd5f5;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --accent: #1d4ed8;
+      --accent-2: #0f766e;
+      --highlight: #f59e0b;
+      --shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Source Sans 3", system-ui, -apple-system, sans-serif;
+      color: var(--ink-900);
+      background: radial-gradient(circle at top, #f1f5f9 0%, #e2e8f0 45%, #f8fafc 100%);
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 28px 6vw 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(248, 250, 252, 0.92);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .brand h1 {
+      font-family: "Source Serif 4", serif;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .brand p {
+      color: var(--ink-700);
+      max-width: 640px;
+    }
+
+    .status {
+      justify-self: end;
+      text-align: right;
+      color: var(--ink-500);
+      font-size: 0.95rem;
+    }
+
+    .status strong {
+      display: block;
+      color: var(--accent-2);
+      font-size: 1.1rem;
+    }
+
+    main {
+      padding: 28px 6vw 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink-900);
+    }
+
+    .card .note {
+      font-size: 0.85rem;
+      color: var(--ink-500);
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+      font-weight: 600;
+    }
+
+    select,
+    input[type="date"] {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fff;
+      width: 100%;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-row button,
+    .country-nav button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-row button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .country-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .country-nav button {
+      background: #f1f5f9;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 20px;
+    }
+
+    .map-container,
+    .chart-container {
+      min-height: 420px;
+    }
+
+    .insight {
+      font-family: "Source Serif 4", serif;
+      font-size: 1.05rem;
+      color: var(--ink-700);
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--ink-500);
+      padding-top: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .header-grid,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        justify-self: start;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div class="brand">
+        <h1>Global Political Ad Intelligence</h1>
+        <p>
+          Academic transparency dashboard for government, regulators, and journalists. Explore worldwide
+          political advertising spend, daily change, and cumulative trajectories for every country in
+          the Meta Ad Library map.
+        </p>
+      </div>
+      <div class="status">
+        <strong id="statusText">Dataset ready</strong>
+        Updated <span id="lastUpdated">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards" id="summaryCards">
+      <div class="card">
+        <h3>Global spend</h3>
+        <div class="value" id="globalSpend">—</div>
+        <div class="note">Total spend in selected window</div>
+      </div>
+      <div class="card">
+        <h3>Daily change</h3>
+        <div class="value" id="globalDaily">—</div>
+        <div class="note">Lifetime day x − day x-1</div>
+      </div>
+      <div class="card">
+        <h3>Countries covered</h3>
+        <div class="value" id="countryCount">—</div>
+        <div class="note">Full map coverage</div>
+      </div>
+      <div class="card">
+        <h3>Advertisers (est.)</h3>
+        <div class="value" id="advertiserCount">—</div>
+        <div class="note">Synthetic sample, replace with real feed</div>
+      </div>
+      <div class="card">
+        <h3>Selected country</h3>
+        <div class="value" id="selectedCountry">Global</div>
+        <div class="note" id="selectedCountrySpend">—</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="countrySelect">Country focus</label>
+          <div class="country-nav">
+            <button id="prevCountry" type="button">◀</button>
+            <select id="countrySelect"></select>
+            <button id="nextCountry" type="button">▶</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="timeframe">Time window</label>
+          <select id="timeframe">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Date range</label>
+          <div class="toggle-row">
+            <input type="date" id="startDate" />
+            <input type="date" id="endDate" />
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Metric</label>
+          <div class="toggle-row" id="metricToggle">
+            <button data-metric="total" class="active" type="button">Total</button>
+            <button data-metric="daily" type="button">Daily</button>
+            <button data-metric="cumulative" type="button">Cumulative</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel map-container" id="mapContainer"></div>
+      <div class="panel">
+        <div class="chart-container" id="trendChart"></div>
+        <p class="insight" id="countryInsight">Select a country to see contextual insights.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 style="font-family: 'Source Serif 4', serif; margin-bottom: 12px;">Top spending countries</h2>
+      <table id="topCountriesTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Country</th>
+            <th>Total spend</th>
+            <th>Daily change</th>
+            <th>Cumulative (range)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <p class="footer">Data in this demo is synthesized. Connect to your Meta Ad Library pipeline for production.</p>
+  </main>
+
+  <script>
+    const HIGHCHARTS_SCRIPTS = [
+      "https://code.highcharts.com/maps/highmaps.js",
+      "https://code.highcharts.com/maps/modules/accessibility.js",
+      "https://code.highcharts.com/modules/exporting.js",
+      "https://code.highcharts.com/modules/export-data.js"
+    ];
+
+    const loadScript = (src) =>
+      new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(script);
+      });
+
+    const loadHighcharts = async () => {
+      for (const src of HIGHCHARTS_SCRIPTS) {
+        await loadScript(src);
+      }
+    };
+
+    const MAP_DATA_URL = "https://code.highcharts.com/mapdata/custom/world.geo.json";
+    const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", year: "numeric" });
+    const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    });
+
+    const state = {
+      map: null,
+      mapSeries: null,
+      trendChart: null,
+      countries: [],
+      metrics: {},
+      selectedCountry: "GLOBAL",
+      timeframe: 90,
+      metricView: "total"
+    };
+
+    const elements = {
+      countrySelect: document.getElementById("countrySelect"),
+      prevCountry: document.getElementById("prevCountry"),
+      nextCountry: document.getElementById("nextCountry"),
+      timeframe: document.getElementById("timeframe"),
+      startDate: document.getElementById("startDate"),
+      endDate: document.getElementById("endDate"),
+      metricToggle: document.getElementById("metricToggle"),
+      globalSpend: document.getElementById("globalSpend"),
+      globalDaily: document.getElementById("globalDaily"),
+      countryCount: document.getElementById("countryCount"),
+      advertiserCount: document.getElementById("advertiserCount"),
+      selectedCountry: document.getElementById("selectedCountry"),
+      selectedCountrySpend: document.getElementById("selectedCountrySpend"),
+      lastUpdated: document.getElementById("lastUpdated"),
+      topCountriesTable: document.querySelector("#topCountriesTable tbody"),
+      countryInsight: document.getElementById("countryInsight")
+    };
+
+    const mulberry32 = (seed) => () => {
+      let t = (seed += 0x6d2b79f5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    const buildCountryMetrics = (features) => {
+      const today = new Date();
+      const days = 365;
+      const dataByCountry = {};
+
+      features.forEach((feature) => {
+        const code = feature.properties["iso-a3"];
+        if (!code) return;
+
+        const seed = code.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        const rand = mulberry32(seed);
+        const dailySpend = [];
+        let cumulative = 0;
+
+        for (let i = days - 1; i >= 0; i -= 1) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          const baseline = 12000 + rand() * 220000;
+          const volatility = 0.4 + rand();
+          const spend = Math.round(baseline * volatility);
+          cumulative += spend;
+          dailySpend.push({
+            date: new Date(date),
+            daily: spend,
+            cumulative
+          });
+        }
+
+        dataByCountry[code] = {
+          name: feature.properties.name,
+          code,
+          dailySpend
+        };
+      });
+
+      return dataByCountry;
+    };
+
+    const formatCurrency = (value) => CURRENCY_FORMATTER.format(Math.round(value));
+
+    const getDateRange = () => {
+      if (elements.startDate.value && elements.endDate.value) {
+        return {
+          start: new Date(elements.startDate.value),
+          end: new Date(elements.endDate.value)
+        };
+      }
+
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - state.timeframe + 1);
+      return { start, end };
+    };
+
+    const filterByRange = (dailySpend) => {
+      const { start, end } = getDateRange();
+      return dailySpend.filter((point) => point.date >= start && point.date <= end);
+    };
+
+    const aggregateSeries = (dailySpend) => {
+      const sliced = filterByRange(dailySpend);
+      const totals = sliced.reduce((sum, point) => sum + point.daily, 0);
+      const dailyChange = sliced.length ? sliced[sliced.length - 1].daily : 0;
+      return { totals, dailyChange, sliced };
+    };
+
+    const updateSummary = () => {
+      const countryCodes = Object.keys(state.metrics);
+      const globalTotals = countryCodes.reduce((sum, code) => sum + aggregateSeries(state.metrics[code].dailySpend).totals, 0);
+      const globalDaily = countryCodes.reduce((sum, code) => sum + aggregateSeries(state.metrics[code].dailySpend).dailyChange, 0);
+      const advertiserEstimate = Math.round(countryCodes.length * 182);
+
+      elements.globalSpend.textContent = formatCurrency(globalTotals);
+      elements.globalDaily.textContent = formatCurrency(globalDaily);
+      elements.countryCount.textContent = countryCodes.length.toLocaleString("en-US");
+      elements.advertiserCount.textContent = advertiserEstimate.toLocaleString("en-US");
+      elements.lastUpdated.textContent = DATE_FORMATTER.format(new Date());
+    };
+
+    const updateSelectedCountryCard = () => {
+      if (state.selectedCountry === "GLOBAL") {
+        elements.selectedCountry.textContent = "Global";
+        elements.selectedCountrySpend.textContent = "Aggregated across all countries";
+        return;
+      }
+      const data = state.metrics[state.selectedCountry];
+      if (!data) return;
+      const { totals, dailyChange } = aggregateSeries(data.dailySpend);
+      elements.selectedCountry.textContent = data.name;
+      elements.selectedCountrySpend.textContent = `${formatCurrency(totals)} · Daily ${formatCurrency(dailyChange)}`;
+    };
+
+    const updateMap = () => {
+      const data = Object.values(state.metrics).map((country) => {
+        const { totals } = aggregateSeries(country.dailySpend);
+        return [country.code, totals];
+      });
+
+      state.mapSeries.setData(data, false);
+      state.map.redraw();
+    };
+
+    const updateTrendChart = () => {
+      const selected = state.selectedCountry;
+      let series;
+
+      if (selected === "GLOBAL") {
+        const sample = state.metrics[Object.keys(state.metrics)[0]].dailySpend.length;
+        series = Array.from({ length: sample }, (_, index) => {
+          const points = Object.values(state.metrics).map((country) => country.dailySpend[index]);
+          const date = points[0].date;
+          const daily = points.reduce((sum, point) => sum + point.daily, 0);
+          const cumulative = points.reduce((sum, point) => sum + point.cumulative, 0);
+          return { date, daily, cumulative };
+        });
+      } else {
+        series = state.metrics[selected].dailySpend;
+      }
+
+      const filtered = filterByRange(series);
+      const chartData = filtered.map((point) => [point.date.getTime(), point[state.metricView]]);
+      state.trendChart.series[0].setData(chartData, true);
+      state.trendChart.setTitle({ text: `${selected === "GLOBAL" ? "Global" : state.metrics[selected].name} spend trend` });
+
+      if (filtered.length) {
+        const latest = filtered[filtered.length - 1];
+        const earliest = filtered[0];
+        const delta = latest.cumulative - earliest.cumulative;
+        elements.countryInsight.textContent = `${selected === "GLOBAL" ? "Global" : state.metrics[selected].name} accumulated ${formatCurrency(delta)} over the selected window. Latest daily change: ${formatCurrency(latest.daily)}.`;
+      }
+    };
+
+    const updateTopCountriesTable = () => {
+      const rows = Object.values(state.metrics)
+        .map((country) => {
+          const { totals, dailyChange, sliced } = aggregateSeries(country.dailySpend);
+          const cumulativeRange = sliced.length ? sliced[sliced.length - 1].cumulative - sliced[0].cumulative : 0;
+          return {
+            name: country.name,
+            totals,
+            dailyChange,
+            cumulativeRange
+          };
+        })
+        .sort((a, b) => b.totals - a.totals)
+        .slice(0, 10);
+
+      elements.topCountriesTable.innerHTML = rows
+        .map(
+          (row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${row.name}</td>
+          <td>${formatCurrency(row.totals)}</td>
+          <td>${formatCurrency(row.dailyChange)}</td>
+          <td>${formatCurrency(row.cumulativeRange)}</td>
+        </tr>
+      `
+        )
+        .join("");
+    };
+
+    const updateAll = () => {
+      updateSummary();
+      updateSelectedCountryCard();
+      updateMap();
+      updateTrendChart();
+      updateTopCountriesTable();
+    };
+
+    const handleCountryChange = (code) => {
+      state.selectedCountry = code;
+      elements.countrySelect.value = code;
+      updateSelectedCountryCard();
+      updateTrendChart();
+    };
+
+    const setDateInputs = () => {
+      const { start, end } = getDateRange();
+      elements.startDate.value = start.toISOString().slice(0, 10);
+      elements.endDate.value = end.toISOString().slice(0, 10);
+    };
+
+    const initCharts = (mapData) => {
+      const countries = mapData.features
+        .filter((feature) => feature.properties["iso-a3"] && feature.properties.name)
+        .map((feature) => ({
+          code: feature.properties["iso-a3"],
+          name: feature.properties.name
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      state.countries = countries;
+      state.metrics = buildCountryMetrics(mapData.features);
+
+      elements.countrySelect.innerHTML = `
+        <option value="GLOBAL">Global overview</option>
+        ${countries.map((country) => `<option value="${country.code}">${country.name}</option>`).join("")}
+      `;
+
+      state.map = Highcharts.mapChart("mapContainer", {
+        chart: {
+          map: mapData,
+          backgroundColor: "transparent",
+          spacing: [10, 10, 10, 10]
+        },
+        title: { text: "Global political ad spend by country" },
+        legend: {
+          title: { text: "Spend intensity" }
+        },
+        colorAxis: {
+          min: 0,
+          stops: [
+            [0, "#e2e8f0"],
+            [0.3, "#bfdbfe"],
+            [0.6, "#60a5fa"],
+            [1, "#1d4ed8"]
+          ]
+        },
+        series: [
+          {
+            name: "Total spend",
+            data: [],
+            joinBy: ["iso-a3", "code"],
+            keys: ["code", "value"],
+            tooltip: {
+              pointFormatter: function () {
+                return `<span style="color:${this.color}">●</span> ${this.name}: <b>${formatCurrency(this.value)}</b>`;
+              }
+            },
+            states: {
+              hover: {
+                color: "#f59e0b"
+              }
+            }
+          }
+        ]
+      });
+
+      state.mapSeries = state.map.series[0];
+
+      state.trendChart = Highcharts.chart("trendChart", {
+        chart: {
+          type: "areaspline",
+          backgroundColor: "transparent"
+        },
+        title: { text: "Global spend trend" },
+        xAxis: {
+          type: "datetime",
+          labels: {
+            format: "{value:%b %e}"
+          }
+        },
+        yAxis: {
+          title: { text: "Spend (USD)" }
+        },
+        tooltip: {
+          shared: true,
+          pointFormatter: function () {
+            return `<span style="color:${this.color}">●</span> ${formatCurrency(this.y)}`;
+          }
+        },
+        series: [
+          {
+            name: "Spend",
+            data: []
+          }
+        ],
+        credits: {
+          enabled: false
+        }
+      });
+
+      setDateInputs();
+      updateAll();
+    };
+
+    const initControls = () => {
+      elements.countrySelect.addEventListener("change", (event) => {
+        handleCountryChange(event.target.value);
+      });
+
+      elements.prevCountry.addEventListener("click", () => {
+        const index = state.countries.findIndex((country) => country.code === state.selectedCountry);
+        if (index <= 0) {
+          handleCountryChange("GLOBAL");
+          return;
+        }
+        handleCountryChange(state.countries[index - 1].code);
+      });
+
+      elements.nextCountry.addEventListener("click", () => {
+        if (state.selectedCountry === "GLOBAL") {
+          handleCountryChange(state.countries[0].code);
+          return;
+        }
+        const index = state.countries.findIndex((country) => country.code === state.selectedCountry);
+        const nextIndex = (index + 1) % state.countries.length;
+        handleCountryChange(state.countries[nextIndex].code);
+      });
+
+      elements.timeframe.addEventListener("change", (event) => {
+        state.timeframe = Number(event.target.value);
+        setDateInputs();
+        updateAll();
+      });
+
+      [elements.startDate, elements.endDate].forEach((input) => {
+        input.addEventListener("change", () => {
+          updateAll();
+        });
+      });
+
+      elements.metricToggle.addEventListener("click", (event) => {
+        if (event.target.tagName !== "BUTTON") return;
+        elements.metricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        event.target.classList.add("active");
+        state.metricView = event.target.dataset.metric;
+        updateTrendChart();
+      });
+    };
+
+    const init = async () => {
+      try {
+        await loadHighcharts();
+      } catch (error) {
+        document.getElementById("mapContainer").innerHTML = "<p>Map libraries failed to load. Please check network access.</p>";
+        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until Highcharts loads.</p>";
+        return;
+      }
+
+      if (typeof Highcharts === "undefined" || typeof Highcharts.mapChart !== "function") {
+        document.getElementById("mapContainer").innerHTML = "<p>Map module failed to initialize. Please verify Highcharts Maps availability.</p>";
+        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable due to a missing Highcharts Maps bundle.</p>";
+        return;
+      }
+
+      try {
+        const response = await fetch(MAP_DATA_URL);
+        if (!response.ok) {
+          throw new Error(`Map data request failed: ${response.status}`);
+        }
+        const mapData = await response.json();
+        initCharts(mapData);
+        initControls();
+      } catch (error) {
+        document.getElementById("mapContainer").innerHTML = "<p>Unable to load map data. Please verify the map data URL and network access.</p>";
+        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until map data loads.</p>";
+      }
+    };
+
+    init();
+  </script>
+</body>
+</html>
