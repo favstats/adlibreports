@@ -348,6 +348,7 @@
           </select>
           <input type="date" id="dataReleaseDate" />
           <div class="subtle" id="dataStatus">Using synthetic data.</div>
+          <div class="pill" id="dataPill">Demo mode</div>
         </div>
         <div class="control-group">
           <label>Date range</label>
@@ -518,6 +519,7 @@
       dataMode: document.getElementById("dataMode"),
       dataReleaseDate: document.getElementById("dataReleaseDate"),
       dataStatus: document.getElementById("dataStatus"),
+      dataPill: document.getElementById("dataPill"),
       startDate: document.getElementById("startDate"),
       endDate: document.getElementById("endDate"),
       metricToggle: document.getElementById("metricToggle"),
@@ -590,6 +592,17 @@
 
     const formatCurrency = (value) => CURRENCY_FORMATTER.format(Math.round(value));
     const formatNumber = (value) => value.toLocaleString("en-US");
+    const setPill = (text, tone = "neutral") => {
+      elements.dataPill.textContent = text;
+      elements.dataPill.style.background = tone === "warn" ? "#fee2e2" : "#f1f5f9";
+      elements.dataPill.style.color = tone === "warn" ? "#991b1b" : "var(--ink-700)";
+    };
+
+    const setReleaseDateDefault = () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 3);
+      elements.dataReleaseDate.value = date.toISOString().slice(0, 10);
+    };
 
     const parseCsv = (text) => {
       const [headerLine, ...lines] = text.trim().split("\n");
@@ -856,24 +869,33 @@
 
     const loadLiveCountry = async () => {
       if (state.dataMode !== "live" || state.selectedCountry === "GLOBAL") {
+        if (state.dataMode === "live") {
+          elements.dataStatus.textContent = "Select a specific country to load live data.";
+          setPill("Awaiting country", "warn");
+        }
         return;
       }
       const releaseDate = elements.dataReleaseDate.value;
       if (!releaseDate) {
         elements.dataStatus.textContent = "Select a release date to load live data.";
+        setPill("Release date required", "warn");
         return;
       }
+      elements.chartNotice.style.display = "none";
       elements.dataStatus.textContent = "Loading live report data...";
+      setPill("Loading live data", "neutral");
       try {
         const rows = await fetchReportData(state.selectedCountry, state.timeframe, releaseDate);
         const series = toDailySeries(rows);
         state.liveMetrics[state.selectedCountry] = series;
         elements.dataStatus.textContent = `Live data loaded for ${state.metrics[state.selectedCountry].name} (${releaseDate}).`;
+        setPill("Live data", "neutral");
         updateAll();
       } catch (error) {
         elements.dataStatus.textContent = `Live data unavailable: ${error.message}`;
         elements.chartNotice.style.display = "block";
-        elements.chartNotice.textContent = "Live report data could not be loaded. The dashboard is still showing synthetic values.";
+        elements.chartNotice.textContent = "Live report data could not be loaded. The dashboard is still showing synthetic values. Ensure the GitHub release includes JSON or CSV assets.";
+        setPill("Live data failed", "warn");
       }
     };
 
@@ -981,6 +1003,7 @@
       });
 
       setDateInputs();
+      setReleaseDateDefault();
       updateAll();
     };
 
@@ -1032,8 +1055,10 @@
         if (state.dataMode === "synthetic") {
           state.liveMetrics = {};
           elements.dataStatus.textContent = "Using synthetic data.";
+          setPill("Demo mode", "neutral");
         } else {
           elements.dataStatus.textContent = "Live mode enabled. Select a country to fetch report data.";
+          setPill("Live mode", "neutral");
         }
         updateAll();
       });
@@ -1041,6 +1066,7 @@
       elements.dataReleaseDate.addEventListener("change", () => {
         if (state.dataMode === "live") {
           elements.dataStatus.textContent = "Ready to fetch live report data.";
+          setPill("Release ready", "neutral");
         }
       });
 
@@ -1088,6 +1114,7 @@
         elements.dataMode.value = "synthetic";
         elements.dataReleaseDate.value = "";
         elements.dataStatus.textContent = "Using synthetic data.";
+        setPill("Demo mode", "neutral");
         state.timeframe = 90;
         setDateInputs();
         elements.metricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
