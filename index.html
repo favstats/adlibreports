@@ -16,6 +16,12 @@
     rel="stylesheet"
   />
 
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+  <script src="https://code.highcharts.com/maps/modules/accessibility.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+
   <style>
     :root {
       --ink-900: #0f172a;
@@ -371,29 +377,6 @@
   </main>
 
   <script>
-    const HIGHCHARTS_SCRIPTS = [
-      "https://code.highcharts.com/maps/highmaps.js",
-      "https://code.highcharts.com/maps/modules/accessibility.js",
-      "https://code.highcharts.com/modules/exporting.js",
-      "https://code.highcharts.com/modules/export-data.js"
-    ];
-
-    const loadScript = (src) =>
-      new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = false;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`Failed to load ${src}`));
-        document.head.appendChild(script);
-      });
-
-    const loadHighcharts = async () => {
-      for (const src of HIGHCHARTS_SCRIPTS) {
-        await loadScript(src);
-      }
-    };
-
     const MAP_DATA_URL = "https://code.highcharts.com/mapdata/custom/world.geo.json";
     const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", year: "numeric" });
     const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
@@ -762,32 +745,10 @@
     };
 
     const init = async () => {
-      try {
-        await loadHighcharts();
-      } catch (error) {
-        document.getElementById("mapContainer").innerHTML = "<p>Map libraries failed to load. Please check network access.</p>";
-        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until Highcharts loads.</p>";
-        return;
-      }
-
-      if (typeof Highcharts === "undefined" || typeof Highcharts.mapChart !== "function") {
-        document.getElementById("mapContainer").innerHTML = "<p>Map module failed to initialize. Please verify Highcharts Maps availability.</p>";
-        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable due to a missing Highcharts Maps bundle.</p>";
-        return;
-      }
-
-      try {
-        const response = await fetch(MAP_DATA_URL);
-        if (!response.ok) {
-          throw new Error(`Map data request failed: ${response.status}`);
-        }
-        const mapData = await response.json();
-        initCharts(mapData);
-        initControls();
-      } catch (error) {
-        document.getElementById("mapContainer").innerHTML = "<p>Unable to load map data. Please verify the map data URL and network access.</p>";
-        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until map data loads.</p>";
-      }
+      const response = await fetch(MAP_DATA_URL);
+      const mapData = await response.json();
+      initCharts(mapData);
+      initControls();
     };
 
     init();
