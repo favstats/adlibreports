@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Global Political Ad Intelligence | Academic Transparency Dashboard</title>
+  <meta
+    name="description"
+    content="Academic transparency dashboard for global political advertising spend and trends, using Highcharts maps and time-series analytics."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --ink-900: #0f172a;
+      --ink-700: #334155;
+      --ink-500: #64748b;
+      --ink-300: #cbd5f5;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --accent: #1d4ed8;
+      --accent-2: #0f766e;
+      --highlight: #f59e0b;
+      --shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Source Sans 3", system-ui, -apple-system, sans-serif;
+      color: var(--ink-900);
+      background: radial-gradient(circle at top, #f1f5f9 0%, #e2e8f0 45%, #f8fafc 100%);
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 28px 6vw 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(248, 250, 252, 0.92);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .brand h1 {
+      font-family: "Source Serif 4", serif;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .brand p {
+      color: var(--ink-700);
+      max-width: 640px;
+    }
+
+    .status {
+      justify-self: end;
+      text-align: right;
+      color: var(--ink-500);
+      font-size: 0.95rem;
+    }
+
+    .status strong {
+      display: block;
+      color: var(--accent-2);
+      font-size: 1.1rem;
+    }
+
+    main {
+      padding: 28px 6vw 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink-900);
+    }
+
+    .card .note {
+      font-size: 0.85rem;
+      color: var(--ink-500);
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+      font-weight: 600;
+    }
+
+    select,
+    input[type="date"] {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fff;
+      width: 100%;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-row button,
+    .country-nav button,
+    .action-row button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-row button.active,
+    .action-row button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .country-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .country-nav button {
+      background: #f1f5f9;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 20px;
+    }
+
+    .map-container,
+    .chart-container {
+      min-height: 420px;
+    }
+
+    .insight {
+      font-family: "Source Serif 4", serif;
+      font-size: 1.05rem;
+      color: var(--ink-700);
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--ink-500);
+      padding-top: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .header-grid,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        justify-self: start;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div class="brand">
+        <h1>Global Political Ad Intelligence</h1>
+        <p>
+          Academic transparency dashboard for government, regulators, and journalists. Explore worldwide
+          political advertising spend, daily change, and cumulative trajectories for every country in
+          the Meta Ad Library map.
+        </p>
+      </div>
+      <div class="status">
+        <strong id="statusText">Dataset ready</strong>
+        Updated <span id="lastUpdated">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <a href="#mainContent" class="subtle" style="text-decoration: none; font-weight: 600;">Skip to dashboard ↓</a>
+    <div id="mainContent"></div>
+    <section class="cards" id="summaryCards">
+      <div class="card">
+        <h3>Global spend</h3>
+        <div class="value" id="globalSpend">—</div>
+        <div class="note">Total spend in selected window</div>
+      </div>
+      <div class="card">
+        <h3>Daily change</h3>
+        <div class="value" id="globalDaily">—</div>
+        <div class="note">Lifetime day x − day x-1</div>
+      </div>
+      <div class="card">
+        <h3>Countries covered</h3>
+        <div class="value" id="countryCount">—</div>
+        <div class="note">Full map coverage</div>
+      </div>
+      <div class="card">
+        <h3>Advertisers (est.)</h3>
+        <div class="value" id="advertiserCount">—</div>
+        <div class="note">Synthetic sample, replace with real feed</div>
+      </div>
+      <div class="card">
+        <h3>Selected country</h3>
+        <div class="value" id="selectedCountry">Global</div>
+        <div class="note" id="selectedCountrySpend">—</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <div>
+          <h2 style="font-family: 'Source Serif 4', serif;">Scope & filters</h2>
+          <p class="subtle">Slice the data by date, metric, and geography. Use per-capita normalization for academic comparisons.</p>
+        </div>
+        <div class="action-row">
+          <button id="resetFilters" type="button">Reset filters</button>
+          <button id="exportData" class="primary" type="button">Export CSV</button>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <label for="countrySelect">Country focus</label>
+          <div class="country-nav">
+            <button id="prevCountry" type="button">◀</button>
+            <select id="countrySelect"></select>
+            <button id="nextCountry" type="button">▶</button>
+          </div>
+          <input class="search-input" id="countrySearch" type="search" placeholder="Search country..." />
+        </div>
+        <div class="control-group">
+          <label for="timeframe">Time window</label>
+          <select id="timeframe">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="dataMode">Data source</label>
+          <select id="dataMode">
+            <option value="synthetic" selected>Synthetic demo</option>
+            <option value="live">Live GitHub reports</option>
+          </select>
+          <input type="date" id="dataReleaseDate" />
+          <div class="subtle" id="dataStatus">Using synthetic data.</div>
+        </div>
+        <div class="control-group">
+          <label>Date range</label>
+          <div class="toggle-row">
+            <input type="date" id="startDate" />
+            <input type="date" id="endDate" />
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Metric</label>
+          <div class="toggle-row" id="metricToggle">
+            <button data-metric="total" class="active" type="button">Total</button>
+            <button data-metric="daily" type="button">Daily</button>
+            <button data-metric="cumulative" type="button">Cumulative</button>
+          </div>
+          <div class="toggle-row" id="normalizationToggle">
+            <button data-normalization="absolute" class="active" type="button">Absolute</button>
+            <button data-normalization="perCapita" type="button">Per 1M people</button>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-row" style="margin-top: 18px;">
+        <div class="kpi">
+          <span>Top country (total)</span>
+          <strong id="topCountryKpi">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Median spend (daily)</span>
+          <strong id="medianSpendKpi">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Highest volatility</span>
+          <strong id="volatilityKpi">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Coverage note</span>
+          <strong id="coverageKpi">—</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel map-container" id="mapContainer"></div>
+      <div class="panel">
+        <div class="chart-container" id="trendChart"></div>
+        <div class="alert" id="chartNotice" style="display: none;"></div>
+        <p class="insight" id="countryInsight">Select a country to see contextual insights.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <div>
+          <h2 style="font-family: 'Source Serif 4', serif;">Top spending countries</h2>
+          <p class="subtle">Rankings are recomputed based on the selected time window and metric.</p>
+        </div>
+        <div class="toggle-row" id="tableMetricToggle">
+          <button data-table="total" class="active" type="button">Total</button>
+          <button data-table="daily" type="button">Daily</button>
+          <button data-table="cumulative" type="button">Cumulative</button>
+        </div>
+      </div>
+      <table id="topCountriesTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Country</th>
+            <th>Total spend</th>
+            <th>Daily change</th>
+            <th>Cumulative (range)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <h2 style="font-family: 'Source Serif 4', serif;">Methodology & notes</h2>
+      </div>
+      <p class="subtle">Daily spend is defined as lifetime day x minus day x-1. Cumulative curves represent running totals in the selected window. Per-capita values are normalized per one million residents using synthetic population estimates in this demo.</p>
+      <p class="subtle">Replace the synthetic generator with your Meta Ad Library pipeline for production-grade insights.</p>
+    </section>
+
+    <p class="footer">Academic dashboard preview · Meta Ad Library transparency analytics</p>
+  </main>
+
+  <script>
+    const HIGHCHARTS_BUNDLES = [
+      [
+        "https://code.highcharts.com/maps/highmaps.js",
+        "https://code.highcharts.com/maps/modules/accessibility.js",
+        "https://code.highcharts.com/modules/exporting.js",
+        "https://code.highcharts.com/modules/export-data.js"
+      ],
+      [
+        "https://code.highcharts.com/highcharts.js",
+        "https://code.highcharts.com/maps/modules/map.js",
+        "https://code.highcharts.com/maps/modules/accessibility.js",
+        "https://code.highcharts.com/modules/exporting.js",
+        "https://code.highcharts.com/modules/export-data.js"
+      ]
+    ];
+
+    const loadScript = (src) =>
+      new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(script);
+      });
+
+    const loadBundle = async (scripts) => {
+      for (const src of scripts) {
+        await loadScript(src);
+      }
+    };
+
+    const ensureHighchartsMaps = async () => {
+      if (window.Highcharts && typeof window.Highcharts.mapChart === "function") {
+        return true;
+      }
+
+      for (const bundle of HIGHCHARTS_BUNDLES) {
+        try {
+          await loadBundle(bundle);
+        } catch (error) {
+          continue;
+        }
+        if (window.Highcharts && typeof window.Highcharts.mapChart === "function") {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const MAP_DATA_URL = "https://code.highcharts.com/mapdata/custom/world.geo.json";
+    const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", year: "numeric" });
+    const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    });
+
+    const state = {
+      map: null,
+      mapSeries: null,
+      trendChart: null,
+      countries: [],
+      metrics: {},
+      liveMetrics: {},
+      selectedCountry: "GLOBAL",
+      timeframe: 90,
+      metricView: "total",
+      normalization: "absolute",
+      tableMetric: "total",
+      dataMode: "synthetic"
+    };
+
+    const elements = {
+      countrySelect: document.getElementById("countrySelect"),
+      prevCountry: document.getElementById("prevCountry"),
+      nextCountry: document.getElementById("nextCountry"),
+      countrySearch: document.getElementById("countrySearch"),
+      timeframe: document.getElementById("timeframe"),
+      dataMode: document.getElementById("dataMode"),
+      dataReleaseDate: document.getElementById("dataReleaseDate"),
+      dataStatus: document.getElementById("dataStatus"),
+      startDate: document.getElementById("startDate"),
+      endDate: document.getElementById("endDate"),
+      metricToggle: document.getElementById("metricToggle"),
+      normalizationToggle: document.getElementById("normalizationToggle"),
+      tableMetricToggle: document.getElementById("tableMetricToggle"),
+      resetFilters: document.getElementById("resetFilters"),
+      exportData: document.getElementById("exportData"),
+      globalSpend: document.getElementById("globalSpend"),
+      globalDaily: document.getElementById("globalDaily"),
+      countryCount: document.getElementById("countryCount"),
+      advertiserCount: document.getElementById("advertiserCount"),
+      selectedCountry: document.getElementById("selectedCountry"),
+      selectedCountrySpend: document.getElementById("selectedCountrySpend"),
+      lastUpdated: document.getElementById("lastUpdated"),
+      topCountriesTable: document.querySelector("#topCountriesTable tbody"),
+      countryInsight: document.getElementById("countryInsight"),
+      chartNotice: document.getElementById("chartNotice"),
+      topCountryKpi: document.getElementById("topCountryKpi"),
+      medianSpendKpi: document.getElementById("medianSpendKpi"),
+      volatilityKpi: document.getElementById("volatilityKpi"),
+      coverageKpi: document.getElementById("coverageKpi")
+    };
+
+    const mulberry32 = (seed) => () => {
+      let t = (seed += 0x6d2b79f5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    const buildCountryMetrics = (features) => {
+      const today = new Date();
+      const days = 365;
+      const dataByCountry = {};
+
+      features.forEach((feature) => {
+        const code = feature.properties["iso-a3"];
+        if (!code) return;
+
+        const seed = code.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        const rand = mulberry32(seed);
+        const dailySpend = [];
+        let cumulative = 0;
+        const population = Math.round(1_000_000 + rand() * 200_000_000);
+
+        for (let i = days - 1; i >= 0; i -= 1) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          const baseline = 12000 + rand() * 220000;
+          const volatility = 0.4 + rand();
+          const spend = Math.round(baseline * volatility);
+          cumulative += spend;
+          dailySpend.push({
+            date: new Date(date),
+            daily: spend,
+            cumulative
+          });
+        }
+
+        dataByCountry[code] = {
+          name: feature.properties.name,
+          code,
+          population,
+          dailySpend
+        };
+      });
+
+      return dataByCountry;
+    };
+
+    const formatCurrency = (value) => CURRENCY_FORMATTER.format(Math.round(value));
+    const formatNumber = (value) => value.toLocaleString("en-US");
+
+    const parseCsv = (text) => {
+      const [headerLine, ...lines] = text.trim().split("\n");
+      const headers = headerLine.split(",").map((header) => header.trim());
+      return lines.map((line) => {
+        const values = line.split(",").map((value) => value.trim().replace(/^\"|\"$/g, ""));
+        return headers.reduce((acc, header, index) => {
+          acc[header] = values[index];
+          return acc;
+        }, {});
+      });
+    };
+
+    const guessField = (rows, candidates) => {
+      if (!rows.length) return null;
+      const keys = Object.keys(rows[0]);
+      return candidates.find((candidate) => keys.includes(candidate)) || keys.find((key) => candidates.some((cand) => key.toLowerCase().includes(cand))) || null;
+    };
+
+    const buildReportTag = (country, timeframe) => `${country}-last_${timeframe}_days`;
+
+    const resolveReportRepo = (ds) => {
+      const cutoff = new Date("2025-07-05");
+      return new Date(ds) > cutoff ? "meta_ad_reports2" : "meta_ad_reports";
+    };
+
+    const fetchReportData = async (country, timeframe, ds) => {
+      const repo = resolveReportRepo(ds);
+      const tag = buildReportTag(country, timeframe);
+      const apiUrl = `https://api.github.com/repos/favstats/${repo}/releases/tags/${tag}`;
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Report release not found for ${country} (${timeframe} days)`);
+      }
+      const release = await response.json();
+      const assets = release.assets || [];
+      const asset = assets.find((item) => item.name.endsWith(".json")) || assets.find((item) => item.name.endsWith(".csv"));
+      if (!asset) {
+        throw new Error("No JSON or CSV report asset found. Add a JSON/CSV export to use live data.");
+      }
+      const dataResponse = await fetch(asset.browser_download_url);
+      if (!dataResponse.ok) {
+        throw new Error("Failed to download report asset.");
+      }
+      const text = await dataResponse.text();
+      const rows = asset.name.endsWith(".json") ? JSON.parse(text) : parseCsv(text);
+      return rows;
+    };
+
+    const toDailySeries = (rows) => {
+      const dateField = guessField(rows, ["date", "ds", "day"]);
+      const spendField = guessField(rows, ["spend", "amount", "spend_total", "total_spend"]);
+      if (!dateField || !spendField) {
+        throw new Error("Unable to identify date/spend fields in report data.");
+      }
+      const sorted = rows
+        .map((row) => ({
+          date: new Date(row[dateField]),
+          daily: Number(row[spendField]) || 0
+        }))
+        .filter((row) => !Number.isNaN(row.date.getTime()))
+        .sort((a, b) => a.date - b.date);
+      let cumulative = 0;
+      return sorted.map((row) => {
+        cumulative += row.daily;
+        return { ...row, cumulative };
+      });
+    };
+
+    const getCountrySeries = (code) => {
+      if (state.liveMetrics[code]) {
+        return state.liveMetrics[code];
+      }
+      return state.metrics[code]?.dailySpend || [];
+    };
+
+    const getDateRange = () => {
+      if (elements.startDate.value && elements.endDate.value) {
+        return {
+          start: new Date(elements.startDate.value),
+          end: new Date(elements.endDate.value)
+        };
+      }
+
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - state.timeframe + 1);
+      return { start, end };
+    };
+
+    const filterByRange = (dailySpend) => {
+      const { start, end } = getDateRange();
+      return dailySpend.filter((point) => point.date >= start && point.date <= end);
+    };
+
+    const aggregateSeries = (dailySpend) => {
+      const sliced = filterByRange(dailySpend);
+      const totals = sliced.reduce((sum, point) => sum + point.daily, 0);
+      const dailyChange = sliced.length ? sliced[sliced.length - 1].daily : 0;
+      return { totals, dailyChange, sliced };
+    };
+
+    const normalizeValue = (value, population) => {
+      if (state.normalization === "perCapita") {
+        return population ? value / (population / 1_000_000) : 0;
+      }
+      return value;
+    };
+
+    const calculateVolatility = (sliced) => {
+      if (sliced.length < 2) return 0;
+      const mean = sliced.reduce((sum, point) => sum + point.daily, 0) / sliced.length;
+      const variance = sliced.reduce((sum, point) => sum + Math.pow(point.daily - mean, 2), 0) / sliced.length;
+      return Math.sqrt(variance);
+    };
+
+    const updateSummary = () => {
+      const countryCodes = Object.keys(state.metrics);
+      const globalTotals = countryCodes.reduce((sum, code) => {
+        const { totals } = aggregateSeries(getCountrySeries(code));
+        return sum + normalizeValue(totals, state.metrics[code].population);
+      }, 0);
+      const globalDaily = countryCodes.reduce((sum, code) => {
+        const { dailyChange } = aggregateSeries(getCountrySeries(code));
+        return sum + normalizeValue(dailyChange, state.metrics[code].population);
+      }, 0);
+      const advertiserEstimate = Math.round(countryCodes.length * 182);
+
+      elements.globalSpend.textContent = formatCurrency(globalTotals);
+      elements.globalDaily.textContent = formatCurrency(globalDaily);
+      elements.countryCount.textContent = formatNumber(countryCodes.length);
+      elements.advertiserCount.textContent = formatNumber(advertiserEstimate);
+      elements.lastUpdated.textContent = DATE_FORMATTER.format(new Date());
+
+      const ranking = Object.values(state.metrics)
+        .map((country) => {
+          const { totals, sliced } = aggregateSeries(getCountrySeries(country.code));
+          return {
+            name: country.name,
+            totals: normalizeValue(totals, country.population),
+            volatility: calculateVolatility(sliced)
+          };
+        })
+        .sort((a, b) => b.totals - a.totals);
+      const medianDaily = Object.values(state.metrics)
+        .map((country) => aggregateSeries(country.dailySpend).dailyChange)
+        .sort((a, b) => a - b);
+      const medianValue = medianDaily[Math.floor(medianDaily.length / 2)] || 0;
+      const volatile = ranking.slice().sort((a, b) => b.volatility - a.volatility)[0];
+
+      elements.topCountryKpi.textContent = ranking[0] ? `${ranking[0].name} (${formatCurrency(ranking[0].totals)})` : "—";
+      elements.medianSpendKpi.textContent = formatCurrency(normalizeValue(medianValue, 1_000_000));
+      elements.volatilityKpi.textContent = volatile ? `${volatile.name} (${formatCurrency(volatile.volatility)})` : "—";
+      elements.coverageKpi.textContent = `${countryCodes.length} countries`;
+    };
+
+    const updateSelectedCountryCard = () => {
+      if (state.selectedCountry === "GLOBAL") {
+        elements.selectedCountry.textContent = "Global";
+        elements.selectedCountrySpend.textContent = "Aggregated across all countries";
+        return;
+      }
+      const data = state.metrics[state.selectedCountry];
+      if (!data) return;
+      const { totals, dailyChange } = aggregateSeries(getCountrySeries(data.code));
+      const normalizedTotals = normalizeValue(totals, data.population);
+      const normalizedDaily = normalizeValue(dailyChange, data.population);
+      elements.selectedCountry.textContent = data.name;
+      elements.selectedCountrySpend.textContent = `${formatCurrency(normalizedTotals)} · Daily ${formatCurrency(normalizedDaily)} · Pop ${formatNumber(data.population)}`;
+    };
+
+    const updateMap = () => {
+      const data = Object.values(state.metrics).map((country) => {
+        const { totals } = aggregateSeries(getCountrySeries(country.code));
+        return [country.code, normalizeValue(totals, country.population)];
+      });
+
+      state.mapSeries.setData(data, false);
+      state.map.redraw();
+    };
+
+    const updateTrendChart = () => {
+      const selected = state.selectedCountry;
+      let series;
+
+      if (selected === "GLOBAL") {
+        const sample = state.metrics[Object.keys(state.metrics)[0]].dailySpend.length;
+        series = Array.from({ length: sample }, (_, index) => {
+          const points = Object.values(state.metrics).map((country) => country.dailySpend[index]);
+          const date = points[0].date;
+          const daily = points.reduce((sum, point) => sum + point.daily, 0);
+          const cumulative = points.reduce((sum, point) => sum + point.cumulative, 0);
+          return { date, daily, cumulative };
+        });
+      } else {
+        series = getCountrySeries(selected);
+      }
+
+      const filtered = filterByRange(series);
+      const chartData = filtered.map((point) => {
+        const value = point[state.metricView];
+        const population = selected === "GLOBAL" ? 1_000_000 : state.metrics[selected].population;
+        return [point.date.getTime(), normalizeValue(value, population)];
+      });
+      state.trendChart.series[0].setData(chartData, true);
+      state.trendChart.setTitle({ text: `${selected === "GLOBAL" ? "Global" : state.metrics[selected].name} spend trend` });
+
+      if (filtered.length) {
+        const latest = filtered[filtered.length - 1];
+        const earliest = filtered[0];
+        const delta = latest.cumulative - earliest.cumulative;
+        const population = selected === "GLOBAL" ? 1_000_000 : state.metrics[selected].population;
+        const normalizedDelta = normalizeValue(delta, population);
+        const normalizedLatest = normalizeValue(latest.daily, population);
+        elements.countryInsight.textContent = `${selected === "GLOBAL" ? "Global" : state.metrics[selected].name} accumulated ${formatCurrency(normalizedDelta)} over the selected window. Latest daily change: ${formatCurrency(normalizedLatest)}.`;
+      }
+    };
+
+    const updateTopCountriesTable = () => {
+      const rows = Object.values(state.metrics)
+        .map((country) => {
+          const { totals, dailyChange, sliced } = aggregateSeries(getCountrySeries(country.code));
+          const cumulativeRange = sliced.length ? sliced[sliced.length - 1].cumulative - sliced[0].cumulative : 0;
+          const normalize = (value) => normalizeValue(value, country.population);
+          return {
+            name: country.name,
+            totals: normalize(totals),
+            dailyChange: normalize(dailyChange),
+            cumulativeRange: normalize(cumulativeRange)
+          };
+        })
+        .sort((a, b) => b[state.tableMetric] - a[state.tableMetric])
+        .slice(0, 10);
+
+      elements.topCountriesTable.innerHTML = rows
+        .map(
+          (row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${row.name}</td>
+          <td>${formatCurrency(row.totals)}</td>
+          <td>${formatCurrency(row.dailyChange)}</td>
+          <td>${formatCurrency(row.cumulativeRange)}</td>
+        </tr>
+      `
+        )
+        .join("");
+    };
+
+    const updateAll = () => {
+      updateSummary();
+      updateSelectedCountryCard();
+      updateMap();
+      updateTrendChart();
+      updateTopCountriesTable();
+    };
+
+    const handleCountryChange = (code) => {
+      state.selectedCountry = code;
+      elements.countrySelect.value = code;
+      updateSelectedCountryCard();
+      updateTrendChart();
+    };
+
+    const loadLiveCountry = async () => {
+      if (state.dataMode !== "live" || state.selectedCountry === "GLOBAL") {
+        return;
+      }
+      const releaseDate = elements.dataReleaseDate.value;
+      if (!releaseDate) {
+        elements.dataStatus.textContent = "Select a release date to load live data.";
+        return;
+      }
+      elements.dataStatus.textContent = "Loading live report data...";
+      try {
+        const rows = await fetchReportData(state.selectedCountry, state.timeframe, releaseDate);
+        const series = toDailySeries(rows);
+        state.liveMetrics[state.selectedCountry] = series;
+        elements.dataStatus.textContent = `Live data loaded for ${state.metrics[state.selectedCountry].name} (${releaseDate}).`;
+        updateAll();
+      } catch (error) {
+        elements.dataStatus.textContent = `Live data unavailable: ${error.message}`;
+        elements.chartNotice.style.display = "block";
+        elements.chartNotice.textContent = "Live report data could not be loaded. The dashboard is still showing synthetic values.";
+      }
+    };
+
+    const setDateInputs = () => {
+      const { start, end } = getDateRange();
+      elements.startDate.value = start.toISOString().slice(0, 10);
+      elements.endDate.value = end.toISOString().slice(0, 10);
+    };
+
+    const initCharts = (mapData) => {
+      const countries = mapData.features
+        .filter((feature) => feature.properties["iso-a3"] && feature.properties.name)
+        .map((feature) => ({
+          code: feature.properties["iso-a3"],
+          name: feature.properties.name
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      state.countries = countries;
+      state.metrics = buildCountryMetrics(mapData.features);
+
+      elements.countrySelect.innerHTML = `
+        <option value="GLOBAL">Global overview</option>
+        ${countries.map((country) => `<option value="${country.code}">${country.name}</option>`).join("")}
+      `;
+
+      state.map = Highcharts.mapChart("mapContainer", {
+        chart: {
+          map: mapData,
+          backgroundColor: "transparent",
+          spacing: [10, 10, 10, 10]
+        },
+        title: { text: "Global political ad spend by country" },
+        legend: {
+          title: { text: "Spend intensity" }
+        },
+        colorAxis: {
+          min: 0,
+          stops: [
+            [0, "#e2e8f0"],
+            [0.3, "#bfdbfe"],
+            [0.6, "#60a5fa"],
+            [1, "#1d4ed8"]
+          ]
+        },
+        series: [
+          {
+            name: "Total spend",
+            data: [],
+            joinBy: ["iso-a3", "code"],
+            keys: ["code", "value"],
+            point: {
+              events: {
+                click: function () {
+                  handleCountryChange(this["iso-a3"]);
+                }
+              }
+            },
+            tooltip: {
+              pointFormatter: function () {
+                return `<span style="color:${this.color}">●</span> ${this.name}: <b>${formatCurrency(this.value)}</b>`;
+              }
+            },
+            states: {
+              hover: {
+                color: "#f59e0b"
+              }
+            }
+          }
+        ]
+      });
+
+      state.mapSeries = state.map.series[0];
+
+      state.trendChart = Highcharts.chart("trendChart", {
+        chart: {
+          type: "areaspline",
+          backgroundColor: "transparent"
+        },
+        title: { text: "Global spend trend" },
+        xAxis: {
+          type: "datetime",
+          labels: {
+            format: "{value:%b %e}"
+          }
+        },
+        yAxis: {
+          title: { text: "Spend (USD)" }
+        },
+        tooltip: {
+          shared: true,
+          pointFormatter: function () {
+            return `<span style="color:${this.color}">●</span> ${formatCurrency(this.y)}`;
+          }
+        },
+        series: [
+          {
+            name: "Spend",
+            data: []
+          }
+        ],
+        credits: {
+          enabled: false
+        }
+      });
+
+      setDateInputs();
+      updateAll();
+    };
+
+    const initControls = () => {
+      elements.countrySelect.addEventListener("change", (event) => {
+        handleCountryChange(event.target.value);
+        loadLiveCountry();
+      });
+
+      elements.countrySearch.addEventListener("input", (event) => {
+        const query = event.target.value.toLowerCase();
+        const match = state.countries.find((country) => country.name.toLowerCase().includes(query));
+        if (match) {
+          handleCountryChange(match.code);
+          loadLiveCountry();
+        }
+      });
+
+      elements.prevCountry.addEventListener("click", () => {
+        const index = state.countries.findIndex((country) => country.code === state.selectedCountry);
+        if (index <= 0) {
+          handleCountryChange("GLOBAL");
+          return;
+        }
+        handleCountryChange(state.countries[index - 1].code);
+        loadLiveCountry();
+      });
+
+      elements.nextCountry.addEventListener("click", () => {
+        if (state.selectedCountry === "GLOBAL") {
+          handleCountryChange(state.countries[0].code);
+          return;
+        }
+        const index = state.countries.findIndex((country) => country.code === state.selectedCountry);
+        const nextIndex = (index + 1) % state.countries.length;
+        handleCountryChange(state.countries[nextIndex].code);
+        loadLiveCountry();
+      });
+
+      elements.timeframe.addEventListener("change", (event) => {
+        state.timeframe = Number(event.target.value);
+        setDateInputs();
+        updateAll();
+        loadLiveCountry();
+      });
+
+      elements.dataMode.addEventListener("change", (event) => {
+        state.dataMode = event.target.value;
+        if (state.dataMode === "synthetic") {
+          state.liveMetrics = {};
+          elements.dataStatus.textContent = "Using synthetic data.";
+        } else {
+          elements.dataStatus.textContent = "Live mode enabled. Select a country to fetch report data.";
+        }
+        updateAll();
+      });
+
+      elements.dataReleaseDate.addEventListener("change", () => {
+        if (state.dataMode === "live") {
+          elements.dataStatus.textContent = "Ready to fetch live report data.";
+        }
+      });
+
+      [elements.startDate, elements.endDate].forEach((input) => {
+        input.addEventListener("change", () => {
+          updateAll();
+          loadLiveCountry();
+        });
+      });
+
+      elements.metricToggle.addEventListener("click", (event) => {
+        if (event.target.tagName !== "BUTTON") return;
+        elements.metricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        event.target.classList.add("active");
+        state.metricView = event.target.dataset.metric;
+        updateTrendChart();
+      });
+
+      elements.normalizationToggle.addEventListener("click", (event) => {
+        if (event.target.tagName !== "BUTTON") return;
+        elements.normalizationToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        event.target.classList.add("active");
+        state.normalization = event.target.dataset.normalization;
+        updateAll();
+      });
+
+      elements.tableMetricToggle.addEventListener("click", (event) => {
+        if (event.target.tagName !== "BUTTON") return;
+        elements.tableMetricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        event.target.classList.add("active");
+        state.tableMetric = event.target.dataset.table;
+        updateTopCountriesTable();
+      });
+
+      elements.resetFilters.addEventListener("click", () => {
+        state.selectedCountry = "GLOBAL";
+        state.metricView = "total";
+        state.normalization = "absolute";
+        state.tableMetric = "total";
+        state.dataMode = "synthetic";
+        state.liveMetrics = {};
+        elements.countrySelect.value = "GLOBAL";
+        elements.countrySearch.value = "";
+        elements.timeframe.value = "90";
+        elements.dataMode.value = "synthetic";
+        elements.dataReleaseDate.value = "";
+        elements.dataStatus.textContent = "Using synthetic data.";
+        state.timeframe = 90;
+        setDateInputs();
+        elements.metricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        elements.metricToggle.querySelector("[data-metric='total']").classList.add("active");
+        elements.normalizationToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        elements.normalizationToggle.querySelector("[data-normalization='absolute']").classList.add("active");
+        elements.tableMetricToggle.querySelectorAll("button").forEach((btn) => btn.classList.remove("active"));
+        elements.tableMetricToggle.querySelector("[data-table='total']").classList.add("active");
+        updateAll();
+      });
+
+      elements.exportData.addEventListener("click", () => {
+        const rows = ["Country,Total,Daily,Cumulative,Population"];
+        Object.values(state.metrics).forEach((country) => {
+          const { totals, dailyChange, sliced } = aggregateSeries(country.dailySpend);
+          const cumulativeRange = sliced.length ? sliced[sliced.length - 1].cumulative - sliced[0].cumulative : 0;
+          rows.push(
+            [
+              `"${country.name}"`,
+              normalizeValue(totals, country.population).toFixed(0),
+              normalizeValue(dailyChange, country.population).toFixed(0),
+              normalizeValue(cumulativeRange, country.population).toFixed(0),
+              country.population
+            ].join(",")
+          );
+        });
+        const blob = new Blob([rows.join("\\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ad-spend-summary.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    };
+
+    const init = async () => {
+      const mapsReady = await ensureHighchartsMaps();
+      if (!mapsReady) {
+        document.getElementById("mapContainer").innerHTML = "<p>Map libraries failed to load. Please check network access or allow Highcharts CDN resources.</p>";
+        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until Highcharts Maps loads.</p>";
+        return;
+      }
+
+      try {
+        const response = await fetch(MAP_DATA_URL);
+        if (!response.ok) {
+          throw new Error(`Map data request failed: ${response.status}`);
+        }
+        const mapData = await response.json();
+        initCharts(mapData);
+        initControls();
+      } catch (error) {
+        document.getElementById("mapContainer").innerHTML = "<p>Unable to load map data. Please verify the map data URL and network access.</p>";
+        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until map data loads.</p>";
+      }
+    };
+
+    init();
+  </script>
+</body>
+</html>
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .action-row button {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .action-row button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .search-input {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--ink-700);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .kpi {
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .kpi strong {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--ink-900);
+    }
+
+    .kpi span {
+      font-size: 0.8rem;
+      color: var(--ink-500);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .subtle {
+      color: var(--ink-500);
+      font-size: 0.9rem;
+    }
+
+    .alert {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      color: #92400e;
+    }
