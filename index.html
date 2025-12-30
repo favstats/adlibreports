@@ -16,6 +16,7 @@
     rel="stylesheet"
   />
 
+  <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/maps/highmaps.js"></script>
   <script src="https://code.highcharts.com/maps/modules/accessibility.js"></script>
   <script src="https://code.highcharts.com/modules/exporting.js"></script>
@@ -744,24 +745,10 @@
     };
 
     const init = async () => {
-      if (typeof Highcharts === "undefined" || typeof Highcharts.mapChart !== "function") {
-        document.getElementById("mapContainer").innerHTML = "<p>Map module failed to load. Please check Highcharts Maps availability.</p>";
-        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable due to a missing Highcharts Maps bundle.</p>";
-        return;
-      }
-
-      try {
-        const response = await fetch(MAP_DATA_URL);
-        if (!response.ok) {
-          throw new Error(`Map data request failed: ${response.status}`);
-        }
-        const mapData = await response.json();
-        initCharts(mapData);
-        initControls();
-      } catch (error) {
-        document.getElementById("mapContainer").innerHTML = "<p>Unable to load map data. Please verify the map data URL and network access.</p>";
-        document.getElementById("trendChart").innerHTML = "<p>Charts unavailable until map data loads.</p>";
-      }
+      const response = await fetch(MAP_DATA_URL);
+      const mapData = await response.json();
+      initCharts(mapData);
+      initControls();
     };
 
     init();
